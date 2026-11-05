@@ -1,0 +1,31 @@
+#!/bin/bash
+# Aísla el honeypot: desde su red solo se puede salir a internet. Nada de la
+# LAN, ni del propio servidor, ni de otros contenedores. Idempotente; lo llama
+# honeypot.service antes de arrancar el contenedor (las reglas no sobreviven
+# a un reinicio).
+set -euo pipefail
+
+ENV_FILE=${ENV_FILE:-/opt/honeypot/.env}
+# shellcheck source=/dev/null
+[ -f "$ENV_FILE" ] && . "$ENV_FILE"
+NET=${HONEYPOT_SUBNET:-172.30.250.0/24}
+PRIVATE=(10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 169.254.0.0/16 100.64.0.0/10 127.0.0.0/8)
+
+rule() { iptables -C "$@" 2>/dev/null || iptables -I "$@"; }
+
+# Tráfico que el contenedor manda hacia fuera de su red (FORWARD). Docker
+# respeta la cadena DOCKER-USER y no la toca.
+iptables -N DOCKER-USER 2>/dev/null || true
+for dst in "${PRIVATE[@]}"; do
+  rule DOCKER-USER -s "$NET" -d "$dst" -j DROP
+done
+# Las respuestas a quien se conecta al honeypot sí deben salir.
+rule DOCKER-USER -s "$NET" -m conntrack --ctstate ESTABLISHED,RELATED -j RETURN
+
+# Tráfico hacia el propio servidor (INPUT): la pasarela de la red no da
+# acceso a nada (SSH, paneles, bases de datos…). DNS sí, para resolver lo que baje.
+rule INPUT -s "$NET" -j DROP
+rule INPUT -s "$NET" -p udp --dport 53 -j ACCEPT
+rule INPUT -s "$NET" -p tcp --dport 53 -j ACCEPT
+
+echo "honeypot-firewall: reglas puestas para $NET"

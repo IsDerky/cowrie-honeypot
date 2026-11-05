@@ -1,0 +1,5 @@
+# Limpieza del honeypot (systemd-tmpfiles-clean, a diario): logs, sesiones
+# grabadas y descargas de más de 30 días.
+e /opt/honeypot/var/log/cowrie - - - 30d
+e /opt/honeypot/var/lib/cowrie/tty - - - 30d
+e /opt/honeypot/var/lib/cowrie/downloads - - - 30d

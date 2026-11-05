@@ -1,0 +1,17 @@
+[Unit]
+Description=Honeypot SSH/Telnet (Cowrie en Docker, aislado de la LAN)
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/honeypot
+# Primero el cortafuegos: el contenedor nunca arranca sin aislar.
+ExecStartPre=/usr/local/bin/honeypot-firewall
+ExecStart=/usr/bin/docker compose up -d --remove-orphans
+ExecStop=/usr/bin/docker compose down
+
+[Install]
+WantedBy=multi-user.target

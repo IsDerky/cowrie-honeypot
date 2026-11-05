@@ -1,0 +1,3 @@
+# Datos del honeypot si se ejecuta aquí (logs, sesiones, malware capturado)
+var/
+.env

@@ -1,0 +1,50 @@
+# Honeypot SSH/Telnet (Cowrie). Shell falso: no ejecuta nada de lo que escriben.
+# Lo arranca honeypot.service, que antes pone el cortafuegos de honeypot-firewall.
+# Las variables salen de .env (ver .env.example).
+services:
+  cowrie:
+    image: cowrie/cowrie:3.1.4
+    container_name: honeypot-cowrie
+    restart: unless-stopped
+    ports:
+      # Docker publica sin pasar por ufw: a propósito, es lo que se quiere exponer.
+      - "${SSH_PORT:-2222}:2222"
+      - "${TELNET_PORT:-2223}:2223"
+    environment:
+      COWRIE_TELNET_ENABLED: "yes"
+      COWRIE_HONEYPOT_HOSTNAME: "${HONEYPOT_HOSTNAME:-web-prod-02}"
+      # Que no lo usen de proxy (spam, ataques a terceros desde tu IP).
+      COWRIE_SSH_FORWARDING: "false"
+      # Lo que intenten bajar (malware) se guarda, hasta 5 MB por archivo.
+      COWRIE_HONEYPOT_DOWNLOAD_LIMIT_SIZE: "5242880"
+    volumes:
+      # Logs (cowrie.json), sesiones grabadas y descargas.
+      - ./var:/cowrie/cowrie-git/var
+    networks:
+      - honeypot
+    # Sin privilegios y sin poder escribir fuera de ./var.
+    user: "999:999"
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 256m
+    cpus: 0.5
+    pids_limit: 64
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  honeypot:
+    name: honeypot
+    driver: bridge
+    ipam:
+      config:
+        # Fija: honeypot-firewall corta por subred.
+        - subnet: "${HONEYPOT_SUBNET:-172.30.250.0/24}"
