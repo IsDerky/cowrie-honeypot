@@ -1,0 +1,20 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: shellcheck
+        run: shellcheck install.sh honeypot-firewall prueba-aislamiento.sh
+      - name: docker-compose.yml válido
+        run: |
+          cp .env.example .env
+          docker compose config --quiet
