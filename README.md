@@ -1,4 +1,4 @@
-# honeypot
+# cowrie-honeypot
 
 Honeypot SSH y Telnet con [Cowrie](https://github.com/cowrie/cowrie) en Docker, corriendo en mi servidor casero. Lo monté para ver qué pasa de verdad cuando expones un puerto 22 a internet: quién entra, qué contraseñas prueba, qué comandos lanza y qué intenta descargar.
 
@@ -53,8 +53,8 @@ Lo he planteado por capas, asumiendo que el contenedor puede acabar comprometido
 Requisitos: Linux con systemd, iptables, Docker y Docker Compose v2.
 
 ```bash
-git clone https://github.com/IsDerky/honeypot.git
-cd honeypot
+git clone https://github.com/IsDerky/cowrie-honeypot.git
+cd cowrie-honeypot
 cp .env.example .env    # ajusta PRUEBA_DESTINOS a tu red
 sudo bash install.sh
 ```
